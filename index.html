@@ -16,12 +16,12 @@
     <div id="visualization">
     </div>
     <div id="user-control">
-      <div><b>Specify the radius for each location:</b></div>
+      <div><b>Lựa chọn đường tròn và bán kính:</b></div>
       <div>
-        <label for="nRadiusA" style="display: inline-block; width: 180px; text-align: left; color: blue">Radius A: <span id="nRadiusA-value"></span></label>1<input type="range" min="1" max="7" step="0.1" id="nRadiusA">7
+        <label for="nRadiusA" style="display: inline-block; width: 180px; text-align: left; color: blue">Bán kính A: <span id="nRadiusA-value"></span></label>1<input type="range" min="1" max="7" step="0.1" id="nRadiusA">7
       </div>
       <div>
-        <label for="nRadiusB" style="display: inline-block; width: 180px; text-align: left; color: red">Radius B: <span id="nRadiusB-value"></span></label>1<input type="range" min="1" max="7" step="0.1" id="nRadiusB">7
+        <label for="nRadiusB" style="display: inline-block; width: 180px; text-align: left; color: red">Bán kính B: <span id="nRadiusB-value"></span></label>1<input type="range" min="1" max="7" step="0.1" id="nRadiusB">7
       </div>
       <div>
         <label for="DBH" style="display: inline-block; width: 250px; text-align: left">Đường kính cây: <span id="nDBH-value"> </span></label>1<input type="range" min="1" max="140" step="1" id="nDBH">140
@@ -82,21 +82,11 @@
   // tính tỉ lệ px/km
   var ratio = dist_px / dist_km;
   // => 1 km được biểu diễn = 1ratio = 44.67585168517817px
-  console.log("chiều dài lớn nhất - px:" + dist_px);
-  console.log("chiều dài lớn nhất - km:" + dist_km);
-  console.log("tỉ lệ px/km - ratio:" + ratio);
 
-  //Đây là bản đồ giữa <kinh độ, vĩ độ> vị trí đến <x, y> vị trí pixel trên bản đồ
   // đổi kinh-vĩ sang x-y pixel trả về [x, y]
   // projection([lon, lat])
   // đổi x-y pixcel sáng kinh-vĩ trả về [lon, lat]
   // projection.invert([x, y])
-  // vẽ thử 1 điểm có tọa độ lon-lat
-  my_lon_lat = [-122.433701, 37.767683];
-  console.log("my_lon_lat:" + my_lon_lat);
-  // chuyển lon-lat ra x-y
-  my_x_y = projection(my_lon_lat);
-  console.log("x - y :" + my_x_y);
 
   var svg = d3.select("#visualization").append("svg").attr('id', 'id-svg')
     .attr("width", width)
@@ -107,33 +97,13 @@
     .attr("height", height)
     .attr("fill", "none")
     .attr("xlink:href", "data/SanFranciscoCityWeb-Illustrator.svg");
-  // .attr("xlink:href", "data/SanFranciscoCityWeb-Illustrator.svg");
-  var inputdata = d3.csv("data/trees.csv", function(error, data) {
 
-    // thêm tag svg vào thẻ div, gắn sự kiện click trên vùng svg
+  var inputdata = d3.csv("data/trees.csv", function(error, data) {
+    // gắn sự kiện click trên vùng svg
     svg.on('click', click);
 
-    // Vẽ điểm cây xanh tại trung tâm SanFranciscoCity
-    svg.append("circle")
-      .attr("id", "center")
-      .attr("cx", projection([-122.433701, 37.767683])[0])
-      .attr("cy", projection([-122.433701, 37.767683])[1])
-      .attr("r", 2 * ratio)
-      .attr("class", "crime")
-      .attr("fill", "#ffffff");
-
-    // Vẽ điểm cây xanh vợi tọa độ là điểm đầu trong bộ dữ liệu
-    console.log(data[0]);
-    var lon = data[1]['Longitude'];
-    var lat = data[1]['Latitude'];
-    svg.append("circle")
-      .attr("cx", projection([lon, lat])[0])
-      .attr("cy", projection([lon, lat])[1])
-      .attr("r", 1 * ratio)
-      .attr("class", "crime")
-      .attr("fill", "black");
-
     visualize(data);
+
     // sự kiện click chuột vẽ 2 đường tròn trên bản đồ
     function click() {
       //bỏ qua sự kiện click nếu bị chặn
