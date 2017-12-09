@@ -12,7 +12,7 @@
 
 <body>
   <div id="my-container">
-    <h1>Bản đồ cây xanh</h1>
+    <h1>Bản đồ cây xanh của SanFranciscom.com</h1>
     <div id="visualization">
     </div>
     <div id="user-control">
@@ -228,7 +228,7 @@
         return projection([d['Longitude'], d['Latitude']])[1]
       })
       .attr("r", 3)
-      .attr("fill", "purple");
+      .attr("fill", "#007700");
   }
   /////////////////////// HÀM LỌC DATA //////////////////////////
   function filters(data) {
