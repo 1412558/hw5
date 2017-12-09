@@ -1,0 +1,3 @@
+-- chạy file index.html
+-- yêu cầu phải mở nó bằng trình duyệt Mozilla Firefox bản mới
+-- các trình duyệt còn lại tham khảo file ảnh browser_support.jpg

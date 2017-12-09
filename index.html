@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>D3 Tutorial</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <script src="script/jquery.3.2.1.js"></script>
+  <script src="script/d3.v3.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <div id="my-container">
+    <h1>Bản đồ cây xanh</h1>
+    <div id="visualization">
+    </div>
+    <div id="user-control">
+      <div><b>Specify the radius for each location:</b></div>
+      <div>
+        <label for="nRadiusA" style="display: inline-block; width: 180px; text-align: left; color: blue">Radius A: <span id="nRadiusA-value"></span></label>1<input type="range" min="1" max="7" step="0.1" id="nRadiusA">7
+      </div>
+      <div>
+        <label for="nRadiusB" style="display: inline-block; width: 180px; text-align: left; color: red">Radius B: <span id="nRadiusB-value"></span></label>1<input type="range" min="1" max="7" step="0.1" id="nRadiusB">7
+      </div>
+      <div>
+        <label for="DBH" style="display: inline-block; width: 250px; text-align: left">Đường kính cây: <span id="nDBH-value"> </span></label>1<input type="range" min="1" max="140" step="1" id="nDBH">140
+      </div>
+      <div>
+        <label style="display: inline-block; width: 180px; text-align: left">
+         Web thông tin
+    </label>
+        <select id="qSiteInfo">
+      <option value="all" selected="selected">All</option>
+      <option value="Median : Cutout">Median : Cutout</option>
+      <option value="Sidewalk: Curb side : Cutout">Sidewalk: Curb side : Cutout</option>
+      <option value="Median : Cutout">Median : Cutout</option>
+      <option value="Front Yard : Cutout">Front Yard : Cutout</option>
+      <option value="Sidewalk: Property side : Cutout">EXCEPTIONAL CLEARANCE</option>
+      <option value="Back Yard : Yard">Back Yard : Yard</option>
+      <option value="unknown : Cutout">unknown : Cutout</option>
+      <option value="Sidewalk: Curb side :">Sidewalk: Curb side :</option>
+      <option value="Median :">Median :</option>
+      <option value="Median : Hanging Pot">Median : Hanging Pot</option>
+      <option value="Median : Yard">Median : Yard</option>
+      <option value="Sidewalk: Curb side : Yard">Sidewalk: Curb side : Yard</option>
+	    <option value="Front Yard : Yard">Front Yard : Yard</option>
+	    <option value="Sidewalk: Curb side : Pot">Sidewalk: Curb side : Pot</option>
+	    <option value="unknown : Yard">unknown : Yard</option>
+	    <option value="Unaccepted Street : Yard">Unaccepted Street : Yard</option>
+	    <option value="Sidewalk: Property side : Yard">Sidewalk: Property side : Yard</option>
+	    <option value="Side Yard : Yard">Side Yard : Yard</option>
+	    <option value=":">:</option>
+	    <option value="Back Yard : Cutout">Back Yard : Cutout</option>
+	    <option value="Side Yard : Cutout">Side Yard : Cutout</option>
+      </select>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
+<script>
+  var count = 0;
+  var colorA = "blue";
+  var colorB = "red";
+  var width = 750;
+  var height = width;
+  var qSiteInfo;
+  var projection = d3.geo.mercator().center([-122.433701, 37.767683]).scale(225000).translate([width / 2, height / 2]);
+  // cao - phải bản đồ
+  var upper_right = projection.invert([750, 0]);
+  // thấo - trái bản đồ
+  var lower_left = projection.invert([0, 750]);
+  // chiều dài đối đa trên map tính bằng px
+  var dist_px = 750 * Math.sqrt(2);
+  // = 1060.6601717798214px
+  // tính khoản cách giữa 2 điểm, mỗi điểm <kinh, vĩ>
+  // tính số km tối đa trên map
+  var dist_km = d3.geo.distance(upper_right, lower_left) * 6371;
+  // số km lớn nhất là :23.741241224769084
+  // tính tỉ lệ px/km
+  var ratio = dist_px / dist_km;
+  // => 1 km được biểu diễn = 1ratio = 44.67585168517817px
+  console.log("chiều dài lớn nhất - px:" + dist_px);
+  console.log("chiều dài lớn nhất - km:" + dist_km);
+  console.log("tỉ lệ px/km - ratio:" + ratio);
+
+  //Đây là bản đồ giữa <kinh độ, vĩ độ> vị trí đến <x, y> vị trí pixel trên bản đồ
+  // đổi kinh-vĩ sang x-y pixel trả về [x, y]
+  // projection([lon, lat])
+  // đổi x-y pixcel sáng kinh-vĩ trả về [lon, lat]
+  // projection.invert([x, y])
+  // vẽ thử 1 điểm có tọa độ lon-lat
+  my_lon_lat = [-122.433701, 37.767683];
+  console.log("my_lon_lat:" + my_lon_lat);
+  // chuyển lon-lat ra x-y
+  my_x_y = projection(my_lon_lat);
+  console.log("x - y :" + my_x_y);
+
+  var svg = d3.select("#visualization").append("svg").attr('id', 'id-svg')
+    .attr("width", width)
+    .attr("height", height);
+  // Tải bản đồ
+  svg.append("image")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "none")
+    .attr("xlink:href", "data/SanFranciscoCityWeb-Illustrator.svg");
+  // .attr("xlink:href", "data/SanFranciscoCityWeb-Illustrator.svg");
+  var inputdata = d3.csv("data/trees.csv", function(error, data) {
+
+    // thêm tag svg vào thẻ div, gắn sự kiện click trên vùng svg
+    svg.on('click', click);
+
+    // Vẽ điểm cây xanh tại trung tâm SanFranciscoCity
+    svg.append("circle")
+      .attr("id", "center")
+      .attr("cx", projection([-122.433701, 37.767683])[0])
+      .attr("cy", projection([-122.433701, 37.767683])[1])
+      .attr("r", 2 * ratio)
+      .attr("class", "crime")
+      .attr("fill", "#ffffff");
+
+    // Vẽ điểm cây xanh vợi tọa độ là điểm đầu trong bộ dữ liệu
+    console.log(data[0]);
+    var lon = data[1]['Longitude'];
+    var lat = data[1]['Latitude'];
+    svg.append("circle")
+      .attr("cx", projection([lon, lat])[0])
+      .attr("cy", projection([lon, lat])[1])
+      .attr("r", 1 * ratio)
+      .attr("class", "crime")
+      .attr("fill", "black");
+
+    visualize(data);
+    // sự kiện click chuột vẽ 2 đường tròn trên bản đồ
+    function click() {
+      //bỏ qua sự kiện click nếu bị chặn
+      //if (d3.event.defaultPrevented) return;
+      //lấy vị trí của chuột.
+      var point = d3.mouse(this);
+      // lấy vị trí x,y
+      var p = {
+        x: point[0],
+        y: point[1]
+      };
+      //console.log(p)
+      count = count + 1;
+      // vẽ điểm A, A_outer
+      if (count % 3 == 1) {
+        svg.append("circle")
+          .attr("cx", p.x)
+          .attr("cy", p.y)
+          .attr("r", 5)
+          .attr("id", "A")
+          .attr("class", "dot")
+          .attr("fill", colorA)
+          .attr("stroke", colorA);
+
+        svg.append("circle")
+          .attr("cx", svg.select("#A").attr("cx"))
+          .attr("cy", svg.select("#A").attr("cy"))
+          .attr("r", 1 * ratio + "px")
+          .attr("id", "A_outer")
+          .attr("class", "dot")
+          .attr("fill", "none")
+          .attr("stroke", colorA);
+
+        visualize(data, filters);
+      }
+      // vẽ B, B_outer
+      if (count % 3 == 2) {
+        svg.append("circle")
+          .attr("cx", p.x)
+          .attr("cy", p.y)
+          .attr("r", 5)
+          .attr("id", "B")
+          .attr("class", "dot")
+          .attr("fill", colorB);
+        svg.append("circle")
+          .attr("cx", svg.select("#B").attr("cx"))
+          .attr("cy", svg.select("#B").attr("cy"))
+          .attr("r", 1 * ratio + "px")
+          .attr("id", "B_outer")
+          .attr("class", "dot")
+          .attr("fill", "none")
+          .attr("stroke", colorB);
+      };
+      // xóa A, B, A_outer, B_outer
+      if (count % 3 == 0) {
+        svg.select("#A").remove();
+        svg.select("#B").remove();
+        svg.select("#A_outer").remove();
+        svg.select("#B_outer").remove(); +
+        svg.selectAll(".crime").remove();
+        // cập nhật giá trị của thanh slider về 1
+        update(1, "A");
+        update(1, "B");
+      };
+    } // end function click
+
+    // SỰ KIỆN TỪ NGƯỜI ĐIỀU KHIỂN SLIDER
+    d3.select("#nRadiusA").on("input", function() {
+      update(+this.value, "A");
+    })
+
+    d3.select("#nRadiusB").on("input", function() {
+      update(+this.value, "B");
+    })
+    d3.select("#nDBH").on("input", function() {
+      // cập nhật giá trị nhãn
+      d3.select("#nDBH-value").text(">= " + this.value + " feet");
+      d3.select("#nDBH").property("value", this.value).attr("value", this.value);
+      visualize(data, filters);
+    })
+    d3.select('#qSiteInfo').on('change', function() {
+      qSiteInfo = d3.select(this).property('value');
+      visualize(data, filters);
+    });
+
+    function update(km, AorB) {
+      // cập nhật giá trị nhãn
+      d3.select("#nRadius" + AorB + "-value").text(km + " km");
+      // cập nhật trên tag slider input
+      d3.select("#nRadius" + AorB).property("value", km).attr("value", km);
+      // cập nhật bán kính
+      d3.select("#" + AorB + "_outer").attr("r", km * ratio);
+
+      visualize(data, filters);
+    }
+  });
+
+  /////////////////////// HÀM VISUALIZATION //////////////////////////
+  // NẾU CÓ TRUYỀN VÀO filters thì lọc, ngược lại ko lọc data
+  function visualize(data, filters) {
+    svg.selectAll(".crime").remove();
+    var filtered_data;
+    if (filters) {
+      filtered_data = filters(data);
+    } else {
+      filtered_data = data;
+    }
+
+    var circles = svg.selectAll("circle")
+      .data(filtered_data)
+      .enter()
+      .append("circle")
+      .attr("class", "crime");
+
+    var circleAttributes = circles.attr("data-id", function(d) {
+        return d['TreeID']
+      })
+      .attr("cx", function(d) {
+        return projection([d['Longitude'], d['Latitude']])[0]
+      })
+      .attr("cy", function(d) {
+        return projection([d['Longitude'], d['Latitude']])[1]
+      })
+      .attr("r", 3)
+      .attr("fill", "purple");
+  }
+  /////////////////////// HÀM LỌC DATA //////////////////////////
+  function filters(data) {
+    // mảng data.filter là lọc dữ liệu, crime_point là duyệt từng phần tử trong mảng
+    // sau function trả về true thì phần tử dữ liệu đó được lấy
+    // cúi cùng return biến filtered là mảng dữ liệu đã được lọc
+    var filtered = data.filter(function(_point) {
+      //console.log(_point.Longitude);
+      var keep = true;
+      var Ra = d3.select("#nRadiusA").attr("value");
+      var Rb = d3.select("#nRadiusB").attr("value");
+
+      if (d3.select("#A")[0][0]) {
+        var a = projection.invert([d3.select("#A").attr("cx"), d3.select("#A").attr("cy")]);
+        keep = keep && d3.geo.distance(a, [_point.Longitude, _point.Latitude]) * 6371 <= Ra;
+        if (!keep) {
+          return false;
+        }
+      }
+      if (d3.select("#B")[0][0]) {
+        var a = projection.invert([d3.select("#B").attr("cx"), d3.select("#B").attr("cy")]);
+        keep = keep && d3.geo.distance(a, [_point.Longitude, _point.Latitude]) * 6371 <= Rb;
+        if (!keep) {
+          return false;
+        }
+      }
+      if (d3.select("nDBH")) {
+        var a = d3.select("#nDBH").attr("value");
+        keep = keep && _point.DBH >= a * 1;
+        if (!keep) {
+          return false;
+        }
+      }
+      if (qSiteInfo && qSiteInfo !== "all") {
+        keep = keep && _point.qSiteInfo === qSiteInfo;
+      }
+      return keep;
+    });
+    return filtered;
+  }
+</script>
