@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="utf-8">
   <title>D3 Tutorial</title>
@@ -9,20 +8,21 @@
   <script src="script/d3.v3.min.js"></script>
   <link rel="stylesheet" href="css/styles.css">
 </head>
-
 <body>
   <div id="my-container">
-    <h1>Bản đồ cây xanh của SanFranciscom.com</h1>
+    <h1>Bản đồ cây xanh của SanFrancisco.com</h1>
+    <h4>Design by 1412558 - Phạm Quốc Toàn</h4>
     <div id="visualization">
     </div>
     <div id="user-control">
-      <div><b>Lựa chọn đường tròn và bán kính:</b></div>
+      <div style="text-align: left"><b>Lựa chọn đường tròn và bán kính:</b></div>
       <div>
         <label for="nRadiusA" style="display: inline-block; width: 180px; text-align: left; color: blue">Bán kính A: <span id="nRadiusA-value"></span></label>1<input type="range" min="1" max="7" step="0.1" id="nRadiusA">7
       </div>
       <div>
         <label for="nRadiusB" style="display: inline-block; width: 180px; text-align: left; color: red">Bán kính B: <span id="nRadiusB-value"></span></label>1<input type="range" min="1" max="7" step="0.1" id="nRadiusB">7
       </div>
+      <div style="text-align: left"><b>Lọc theo:</b></div>
       <div>
         <label for="DBH" style="display: inline-block; width: 250px; text-align: left">Đường kính cây: <span id="nDBH-value"> </span></label>1<input type="range" min="1" max="140" step="1" id="nDBH">140
       </div>
@@ -54,6 +54,13 @@
 	    <option value="Back Yard : Cutout">Back Yard : Cutout</option>
 	    <option value="Side Yard : Cutout">Side Yard : Cutout</option>
       </select>
+      </div>
+      <div style="text-align: left">
+        <p>1. Click lần 1 vào bản đồ và di chuyển bán kính của đường tròn xanh</p>
+        <p>2. Click lần 2 vào bản đồ và di chuyển bán kính của đường tròn đỏ</p>
+        <p>3. Thay đổi bán kính để 2 đường tròn cắt nhau</p>
+        <p>4. Thay đổi các điều kiện lọc</p>
+        <p>5. Click lần 3 xóa tất cả, quay về bước 1 với vị trí đường tròn nằm chỗ khác</p>
       </div>
     </div>
   </div>
@@ -115,7 +122,6 @@
         x: point[0],
         y: point[1]
       };
-      //console.log(p)
       count = count + 1;
       // vẽ điểm A, A_outer
       if (count % 3 == 1) {
@@ -129,15 +135,13 @@
           .attr("stroke", colorA);
 
         svg.append("circle")
-          .attr("cx", svg.select("#A").attr("cx"))
-          .attr("cy", svg.select("#A").attr("cy"))
+          .attr("cx", p.x)
+          .attr("cy", p.y)
           .attr("r", 1 * ratio + "px")
           .attr("id", "A_outer")
           .attr("class", "dot")
           .attr("fill", "none")
           .attr("stroke", colorA);
-
-        visualize(data, filters);
       }
       // vẽ B, B_outer
       if (count % 3 == 2) {
@@ -168,6 +172,7 @@
         update(1, "A");
         update(1, "B");
       };
+      visualize(data, filters);
     } // end function click
 
     // SỰ KIỆN TỪ NGƯỜI ĐIỀU KHIỂN SLIDER
@@ -196,7 +201,6 @@
       d3.select("#nRadius" + AorB).property("value", km).attr("value", km);
       // cập nhật bán kính
       d3.select("#" + AorB + "_outer").attr("r", km * ratio);
-
       visualize(data, filters);
     }
   });
@@ -204,6 +208,7 @@
   /////////////////////// HÀM VISUALIZATION //////////////////////////
   // NẾU CÓ TRUYỀN VÀO filters thì lọc, ngược lại ko lọc data
   function visualize(data, filters) {
+
     svg.selectAll(".crime").remove();
     var filtered_data;
     if (filters) {
@@ -235,12 +240,10 @@
     // mảng data.filter là lọc dữ liệu, crime_point là duyệt từng phần tử trong mảng
     // sau function trả về true thì phần tử dữ liệu đó được lấy
     // cúi cùng return biến filtered là mảng dữ liệu đã được lọc
+    var Ra = d3.select("#nRadiusA").attr("value")*1;
+    var Rb = d3.select("#nRadiusB").attr("value")*1;
     var filtered = data.filter(function(_point) {
-      //console.log(_point.Longitude);
       var keep = true;
-      var Ra = d3.select("#nRadiusA").attr("value");
-      var Rb = d3.select("#nRadiusB").attr("value");
-
       if (d3.select("#A")[0][0]) {
         var a = projection.invert([d3.select("#A").attr("cx"), d3.select("#A").attr("cy")]);
         keep = keep && d3.geo.distance(a, [_point.Longitude, _point.Latitude]) * 6371 <= Ra;
@@ -249,10 +252,25 @@
         }
       }
       if (d3.select("#B")[0][0]) {
-        var a = projection.invert([d3.select("#B").attr("cx"), d3.select("#B").attr("cy")]);
-        keep = keep && d3.geo.distance(a, [_point.Longitude, _point.Latitude]) * 6371 <= Rb;
+        var b = projection.invert([d3.select("#B").attr("cx"), d3.select("#B").attr("cy")]);
+        keep = keep && d3.geo.distance(b, [_point.Longitude, _point.Latitude]) * 6371 <= Rb;
         if (!keep) {
           return false;
+        }
+      }
+      // 2 đường tròn cắt nhau thì 
+      if (d3.select("#A")[0][0] && d3.select("#B")[0][0]) {
+        // lấy vị trí A,B theo tọa đọ xy pixel
+        var Ia = [d3.select("#A").attr("cx"), d3.select("#A").attr("cy")];
+        var Ib = [d3.select("#B").attr("cx"), d3.select("#B").attr("cy")];
+        var x = Ia[0]-Ib[0];
+        var y = Ia[1]-Ib[1];
+        // kiểm tra
+        //|Ra - Rb| < IaIb < Ra + Rb
+        var OO = Math.sqrt(x*x + y*y);
+        if (!((Math.abs(Ra - Rb)*ratio) < OO) && (OO < (Ra + Rb)*ratio))
+        {
+          keep = false;
         }
       }
       if (d3.select("nDBH")) {
